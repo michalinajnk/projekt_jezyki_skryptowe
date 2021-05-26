@@ -715,7 +715,7 @@ while run:
                 login = login_txt_box.return_input()
                 password = password_txt_box.return_input()
                 done = True
-
+                print(game_info.user_exist(login))
                 if game_info.user_exist(login):
                     log_vals = Login(login, game_info)
                     if log_vals.check_pass(password):

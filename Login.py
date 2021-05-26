@@ -28,12 +28,14 @@ class Game_Info:
                     if iter > 0:
                         if len(line) == 2:
                             users.append(User(line[0], line[1]))
+                        elif len(line) == 3:
+                            users.append(User(line[0], line[1], int(line[2])))
                     iter += 1
         return users
 
     def user_exist(self, login):
-        for username in self.usernames():
-            if login == username:
+        for user in self.stored_users:
+            if login == user.username:
                 return True
         return False
 
@@ -64,7 +66,7 @@ class User:
 
     def __init__(self, usr_nm, h_pass, b_score=0):
         self.username = usr_nm
-        self.hash_pass = h_pass.encode('utf-8')
+        self.hash_pass = h_pass
         self.best_score = b_score
 
     def __str__(self):
@@ -79,20 +81,19 @@ class User:
 
 class Login:
     def __init__(self, login, game_info):
-        self.salt = bytes(game_info.get_user_salt(login), 'utf-8')
         self.hash_pass = game_info.get_user_hash_pass(login)
 
     def check_pass(self, password):
 
-        #hashed_pass = hashlib.pbkdf2_hmac(
-         #   'sha256',
-          #  password,  # Convert the password to bytes
-           # self.salt,
-            #100000, dklen=128)
 
 
-       # if self.hash_pass == hashed_pass:
+        print('SZUKAMY TEGO: ')
+        print(self.hash_pass)
+        print('MAMY TO:')
+        print(make_pw_hash(password))
+
         if check_pw_hash(password, self.hash_pass):
+            print('Correct password')
             return True
         else:
             return False
@@ -102,7 +103,7 @@ class Register:
     def __init__(self, login, password, game_info):
         self.salt = os.urandom(32)
         self.hash_pass = make_pw_hash(password)
-        #self.hash_pass = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), self.salt, 100000, dklen=128)
+
         self.add_user('users.csv', login, self.hash_pass, game_info)
 
 
