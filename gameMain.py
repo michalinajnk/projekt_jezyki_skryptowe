@@ -16,7 +16,7 @@ SIZE = [SCREEN_WIDTH, SCREEN_HEIGHT]
 TILE = 1
 DISTANCE_FOR_I_ENEMIES = SCREEN_WIDTH / 4
 # scrolling variables
-trshld_SCROLL = 100 #granica kiedy wszysko powinno zacząc sie ruszac
+trshld_SCROLL = 200 #granica kiedy wszysko powinno zacząc sie ruszac
 bg_scroll = 0
 sc_scroll = 0  # the main one
 
@@ -33,7 +33,7 @@ logFont = pygame.font.Font("PIXEARG_.TTF", 20)
 GMFont = pygame.font.Font('amazdoom.ttf', 160)
 
 # creating rate for a gameA
-clock = pygame.time.Clock()
+start_clock = pygame.time.Clock()
 FPS = 60
 
 # bonuses to take
@@ -125,9 +125,10 @@ def draw_background_update():
     draw_stats(player.ammo, player.grenades)
 
     if not player.alive:
-        GAME_OVER = GMFont.render('GAME OVER', True,(255, 25, 100))
+        GAME_OVER = GMFont.render('GAME OVER', True, (255, 25, 100))
         screen.blit(GAME_OVER, (200, 200))
-
+        time_since_enter = pygame.time.get_ticks() - start_clock.get_time()
+        player.user.update_score(int(1000 * ((lvl * player.ammo) + player.health) / time_since_enter))
 
 def draw_menu_game():
     screen.fill(WHITE)
@@ -228,7 +229,6 @@ class Player(pygame.sprite.Sprite):
 
     def move(self, move_left, move_right):
         sc_scroll = 0
-        level_complete = False
         dx = 0
         dy = 0
 
@@ -275,7 +275,7 @@ class Player(pygame.sprite.Sprite):
             self.health = 0
 
             # check for collision with exit
-
+        level_complete = False
         if pygame.sprite.spritecollide(self, exit_group, False):
             level_complete = True
 
@@ -362,7 +362,7 @@ class Player(pygame.sprite.Sprite):
                     self.move_counter += 1
                     # update eyesight
                     self.eye_sight.center = (self.rect.centerx + 75 * self.dir, self.rect.centery)
-                    if self.move_counter > DISTANCE_FOR_I_ENEMIES:
+                    if self.move_counter > TILE_SIZE:
                         self.dir *= -1
                         self.move_counter *= -1
                 else:
@@ -419,7 +419,6 @@ class Platform(object):
 
         return player, health_bar
 
-#TU JEST BLAD
     def draw(self):
         for obstacle in self.obstacles:
             obstacle[1][0] += sc_scroll  # changing x position of a obstacles
@@ -457,8 +456,6 @@ class Exit(pygame.sprite.Sprite):
 
     def update(self):
         self.rect.x += sc_scroll
-
-
 
 
 
@@ -637,14 +634,17 @@ exit_group = pygame.sprite.Group()
 # buttons
 start_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, start_img, 0.5)
 exit_btn = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 + 100, exit_img, 0.625)
-restart_btn = Button(600, 30, restart_img, 0.5)
+
 confirm_btn = Button(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, confirm_img, 1.0)
 
 login_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, login_img, 1.0)
 sign_up_btn = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 + 100, sign_up_img, 1.0)
 try_again_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, try_again_img, 0.5)
 instruction_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, inst_img, 0.5)
-stats_btn = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 + 100, stats_img, 0.5)
+
+restart_btn = Button(600, 30, restart_img, 0.5)
+stats_btn = Button(600, 60, stats_img, 0.5)
+exit_btn_2 = Button(600, 90, exit_img, 0.625)
 
 # text_boxes
 login_boxes = []
@@ -673,10 +673,8 @@ player, health_bar = world.read_data(world_data)
 
 run = True
 while run:
-    clock.tick(FPS)  # start a clock with FPS frequency of movement
+    start_clock.tick(FPS)  # start a clock with FPS frequency of movement
     game_info = Game_Info('users.csv')
-    wantToLog = False
-    wantToRegister = False
     draw_starter()
     click_login = login_btn.draw(screen)
     click_sign_up = sign_up_btn.draw(screen)
@@ -723,13 +721,16 @@ while run:
                         player.set_user(user)
                         logged = True
                         print("Zalogowales sie")
+                        break
                     else:
                         print("Nieprawidlowe haslo")
+
 
                 elif not game_info.user_exist(login):
                     print('Nie ma twojego konta')
                     break
-    elif click_sign_up:
+
+    elif click_sign_up and not logged:
         done = False
         while not done:
             for event in pygame.event.get():
@@ -757,11 +758,10 @@ while run:
                 password = password_txt_box.return_input()
                 done = True
 
-
-                new_register = Register(login, password, game_info)
-                print("Rejestrujesz się")
-                player.set_user(game_info.get_user(login))
-                logged = True
+        new_register = Register(login, password, game_info)
+        print("Rejestrujesz się")
+        player.set_user(game_info.get_user(login))
+        logged = True
 
     if not start_game and logged:
         draw_menu_game()
@@ -773,7 +773,6 @@ while run:
             run = False
 
     elif logged:
-
         draw_background_update()
         world.draw()
         health_bar.draw(player.health)
@@ -817,7 +816,9 @@ while run:
                 player.update_action(2)  # 2: jump
             elif move_left or move_right:
                 player.update_action(1)  # 1: run
+
             else:
+
                 player.update_action(0)  # 0: idle
             sc_scroll, level_complete = player.move(move_left, move_right)
             #bg_scroll -= sc_scroll
@@ -847,6 +848,23 @@ while run:
                             world_data[x][y] = int(tile)
                 world = Platform()
                 player, health_bar = world.read_data(world_data)
+            elif exit_btn_2.draw(screen):
+                print('klikniety exit')
+                don = False
+                while not don:
+                    print('jestem w pętli exit')
+                    screen.fill((54, 54, 54))
+                    stats = logFont.render(game_info.get_stats(), True, (255, 25, 100))
+                    screen.blit(stats_img, (300, 30))
+                    screen.blit(stats, (30, 100))
+                    pygame.display.flip()
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            don = True
+                            pygame.quit()
+                            sys.exit()
+            print('juz po petli exit')
+
 
     for event in pygame.event.get():
         # quit game
@@ -867,17 +885,17 @@ while run:
             if event.key == pygame.K_ESCAPE:
                 run = False
 
-        # keyboard button released
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_a:
-                move_left = False
-            if event.key == pygame.K_d:
-                move_right = False
-            if event.key == pygame.K_SPACE:
-                shoot = False
-            if event.key == pygame.K_q:
-                grenade = False
-                grenade_thrown = False
+    # keyboard button released
+    if event.type == pygame.KEYUP:
+        if event.key == pygame.K_a:
+            move_left = False
+        if event.key == pygame.K_d:
+            move_right = False
+        if event.key == pygame.K_SPACE:
+            shoot = False
+        if event.key == pygame.K_q:
+            grenade = False
+            grenade_thrown = False
 
     pygame.display.update()
 pygame.quit()

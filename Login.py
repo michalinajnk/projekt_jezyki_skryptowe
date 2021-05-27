@@ -1,12 +1,13 @@
 import csv
 import hashlib
 import os
+import pandas as pd
 
 def make_pw_hash(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
 
-def check_pw_hash(password, hash):  #verify uer input
+def check_pw_hash(password, hash):  # verify uer input
     if make_pw_hash(password) == hash:
         return True
     else:
@@ -50,6 +51,11 @@ class Game_Info:
             if user.username == login:
                 return user
 
+    def get_stats(self):
+        stats = ''
+        for user in sorted(self.stored_users, key=lambda x: x.best_score, reverse=True):
+            stats += user.__str__() + '\n'
+        return stats
 
     def get_user_hash_pass(self, usr):
         for user in self.stored_users:
@@ -69,23 +75,38 @@ class User:
         self.hash_pass = h_pass
         self.best_score = b_score
 
-    def __str__(self):
-        return str(self.username) + 'score: ' + str(self.best_score)
-
     def update_score(self, new_score):
         if self.best_score < new_score:
             self.best_score = new_score
+            with open('users.csv', 'r') as infile, open('users2.csv', 'w') as outfile:
+                reader = csv.reader(infile)
+                writer = csv.writer(outfile)
+                for row in reader:
+                    if row != '\n':
+                        if row[0] == self.username:
+                            row[2] = new_score
+                    writer.writerow(row)
+            os.remove('users.csv')
+            os.rename('users2.csv', 'users.csv')
+
+
+
+
+
+
 
     def __eq__(self, other):
         return self.username == other.username
+
+    def __str__(self):
+        return str(self.username) + ' best score: ' + str(self.best_score)
+
 
 class Login:
     def __init__(self, login, game_info):
         self.hash_pass = game_info.get_user_hash_pass(login)
 
     def check_pass(self, password):
-
-
 
         print('SZUKAMY TEGO: ')
         print(self.hash_pass)
@@ -106,30 +127,16 @@ class Register:
 
         self.add_user('users.csv', login, self.hash_pass, game_info)
 
-
     def add_user(self, csv_file, login, hash_pass, game_info):
         if not game_info.user_exist(login):
             with open(csv_file, 'a', encoding='UTF8') as f:
                 writer = csv.writer(f)
                 writer.writerow([login, hash_pass, 0])
 
-
-
     def log_in(self, login, password, game_info):
         register = Register(login, password)
         for username in game_info.usernames():
-            if username == login and register.salt == game_info.get_user_salt(login) and register.hash_pass == Game_Info.get_user_hash_pass(login):
+            if username == login and register.salt == game_info.get_user_salt(
+                    login) and register.hash_pass == Game_Info.get_user_hash_pass(login):
                 return True
         return False
-
-
-
-
-
-
-
-
-
-
-
-
