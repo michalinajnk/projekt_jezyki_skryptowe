@@ -126,6 +126,7 @@ def draw_background_update():
 
     if not player.alive:
         time_since_enter = pygame.time.get_ticks() - start_clock.get_time()
+        print('STATS ' + str(int(1000 * ((lvl * player.ammo) + player.health) / time_since_enter)))
         player.user.update_score(int(1000 * ((lvl * player.ammo) + player.health) / time_since_enter))
         GAME_OVER = GMFont.render('GAME OVER', True, (255, 25, 100))
         screen.blit(GAME_OVER, (200, 200))
@@ -829,6 +830,7 @@ while run:
 
         # ---------------------------------------------------------------------------------------------------------
         # update player actions
+
         if player.alive:
             if shoot:  # shoot bullets
                 player.shoot()
@@ -864,6 +866,7 @@ while run:
                     player, health_bar = world.read_data(world_data)
         else:
             sc_scroll = 0
+            draw_background_update()
             if restart_btn.draw(screen):
                 world_data = reset_level()
                 # load in level data and create world
