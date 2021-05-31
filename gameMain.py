@@ -125,10 +125,10 @@ def draw_background_update():
     draw_stats(player.ammo, player.grenades)
 
     if not player.alive:
-        GAME_OVER = GMFont.render('GAME OVER', True, (255, 25, 100))
-        screen.blit(GAME_OVER, (200, 200))
         time_since_enter = pygame.time.get_ticks() - start_clock.get_time()
         player.user.update_score(int(1000 * ((lvl * player.ammo) + player.health) / time_since_enter))
+        GAME_OVER = GMFont.render('GAME OVER', True, (255, 25, 100))
+        screen.blit(GAME_OVER, (200, 200))
 
 def draw_menu_game():
     screen.fill(WHITE)
@@ -145,6 +145,7 @@ def draw_menu_game():
 def draw_starter():
     screen.fill(WHITE)
     screen.blit(sky_img, (0, 0))
+
 def reset_level():
     enemy_group.empty()
     bullet_group.empty()
@@ -680,11 +681,37 @@ while run:
     click_sign_up = sign_up_btn.draw(screen)
     login = ''
     password = ''
-    
+
     for event in pygame.event.get():
+        # quit game
         if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            run = False
+        # keyboard presses
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_a:
+                move_left = True
+            if event.key == pygame.K_d:
+                move_right = True
+            if event.key == pygame.K_SPACE:
+                shoot = True
+            if event.key == pygame.K_q:
+                grenade = True
+            if event.key == pygame.K_w and player.alive:
+                player.jump = True
+            if event.key == pygame.K_ESCAPE:
+                run = False
+
+        # keyboard button released
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_a:
+                move_left = False
+            if event.key == pygame.K_d:
+                move_right = False
+            if event.key == pygame.K_SPACE:
+                shoot = False
+            if event.key == pygame.K_q:
+                grenade = Falsedd
+                grenade_thrown = False
     
     if click_login:
         done = False
@@ -866,36 +893,7 @@ while run:
             print('juz po petli exit')
 
 
-    for event in pygame.event.get():
-        # quit game
-        if event.type == pygame.QUIT:
-            run = False
-        # keyboard presses
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_a:
-                move_left = True
-            if event.key == pygame.K_d:
-                move_right = True
-            if event.key == pygame.K_SPACE:
-                shoot = True
-            if event.key == pygame.K_q:
-                grenade = True
-            if event.key == pygame.K_w and player.alive:
-                player.jump = True
-            if event.key == pygame.K_ESCAPE:
-                run = False
 
-    # keyboard button released
-    if event.type == pygame.KEYUP:
-        if event.key == pygame.K_a:
-            move_left = False
-        if event.key == pygame.K_d:
-            move_right = False
-        if event.key == pygame.K_SPACE:
-            shoot = False
-        if event.key == pygame.K_q:
-            grenade = False
-            grenade_thrown = False
 
     pygame.display.update()
 pygame.quit()
