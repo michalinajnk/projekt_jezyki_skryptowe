@@ -710,11 +710,13 @@ while run:
             if event.key == pygame.K_SPACE:
                 shoot = False
             if event.key == pygame.K_q:
-                grenade = Falsedd
+                grenade = False
                 grenade_thrown = False
-    
-    if click_login:
+    iterator = 0
+    if click_login and not logged:
         done = False
+        iterator += 1
+        print(str(iterator))
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -748,14 +750,12 @@ while run:
                         player.set_user(user)
                         logged = True
                         print("Zalogowales sie")
-                        break
                     else:
                         print("Nieprawidlowe haslo")
 
 
                 elif not game_info.user_exist(login):
                     print('Nie ma twojego konta')
-                    break
 
     elif click_sign_up and not logged:
         done = False
@@ -799,13 +799,12 @@ while run:
         if click_exit:
             run = False
 
-    elif logged:
+    if start_game and logged:
         draw_background_update()
         world.draw()
         health_bar.draw(player.health)
         player.update()
         player.draw()
-
 
         for enemy in enemy_group:
             enemy.intelligent_moves()
@@ -891,9 +890,6 @@ while run:
                             pygame.quit()
                             sys.exit()
             print('juz po petli exit')
-
-
-
 
     pygame.display.update()
 pygame.quit()
