@@ -67,14 +67,17 @@ map_action = {0: 'Idle', 1: 'Run', 2: 'Jump', 3: 'Death'}
 # images
 
 # buttons
-start_img = pygame.image.load('img/start.png')
+start_img = pygame.image.load('img/start_pixel.png')
 restart_img = pygame.image.load('img/restart.png')
 exit_img = pygame.image.load('img/exit.png')
+exit_img_pixel = pygame.image.load('img/exit_pixel.png')
 login_img = pygame.image.load('img/login.png')
 sign_up_img = pygame.image.load('img/sign_up.png')
 try_again_img = pygame.image.load('img/try_again.png')
 inst_img = pygame.image.load('img/instruction.png')
 stats_img = pygame.image.load('img/stats.png')
+stats_img_pixel = pygame.image.load('img/stats_pixel.png')
+stats_img = pygame.transform.scale(stats_img, (stats_img.get_width()*2, stats_img.get_height()*2))
 confirm_img = pygame.image.load('img/confirm.png')
 
 # amunition
@@ -121,15 +124,17 @@ def draw_stats(ammo, grenades):
 def draw_background_update():
     screen.fill(BG_default)
     width = sky_img.get_width()
-    screen.blit(sky_img, (0, 0)) #width - bg_scroll * 0.5
+    screen.blit(sky_img, (0, 0))
     draw_stats(player.ammo, player.grenades)
 
     if not player.alive:
-        time_since_enter = pygame.time.get_ticks() - start_clock.get_time()
-        print('STATS ' + str(int(1000 * ((lvl * player.ammo) + player.health) / time_since_enter)))
-        player.user.update_score(int(1000 * ((lvl * player.ammo) + player.health) / time_since_enter))
+        timer = pygame.time.get_ticks() - start_clock.get_time()
+
+        print('STATS ' + str(int(10000 * ((lvl * player.ammo) + player.health) / timer)))
+        if player.user is not None:
+            game_info.update_stored_users(player.user.username, int((100000 * lvl) * (player.ammo + player.health) / (pygame.time.get_ticks() - start_clock.get_time())), 'users.csv')
         GAME_OVER = GMFont.render('GAME OVER', True, (255, 25, 100))
-        screen.blit(GAME_OVER, (200, 200))
+        screen.blit(GAME_OVER, (150, 200))
 
 def draw_menu_game():
     screen.fill(WHITE)
@@ -148,6 +153,7 @@ def draw_starter():
     screen.blit(sky_img, (0, 0))
 
 def reset_level():
+
     enemy_group.empty()
     bullet_group.empty()
     grenade_group.empty()
@@ -634,20 +640,23 @@ decoration_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
 
 # buttons
-start_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, start_img, 0.5)
-exit_btn = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 + 100, exit_img, 0.625)
+start_btn = Button(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100, start_img, 0.65)
+exit_btn = Button(SCREEN_WIDTH // 2 - 205, SCREEN_HEIGHT // 2 + 100, exit_img, 0.65)
+
+stats_btn2 = Button(SCREEN_WIDTH // 2 - 320, SCREEN_HEIGHT // 2 + 100 + exit_btn.height, stats_img_pixel, 0.65)
+stats_btn = Button(SCREEN_WIDTH // 2 - 280, SCREEN_HEIGHT // 2 + 100 + exit_btn.height, stats_img_pixel, 0.65)
+instruction_btn = Button(SCREEN_WIDTH // 2 - 80, SCREEN_HEIGHT // 2 + 100 + start_btn.height, inst_img, 0.65)
+
 
 confirm_btn = Button(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2, confirm_img, 1.0)
-
 login_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, login_img, 1.0)
 sign_up_btn = Button(SCREEN_WIDTH // 2 - 220, SCREEN_HEIGHT // 2 + 100, sign_up_img, 1.0)
-try_again_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, try_again_img, 0.5)
-instruction_btn = Button(SCREEN_WIDTH // 2 - 10, SCREEN_HEIGHT // 2 + 90, inst_img, 0.5)
 
-restart_btn = Button(600, 30, restart_img, 0.5)
-stats_btn = Button(600, 60, stats_img, 0.5)
+
+restart_btn = Button(SCREEN_WIDTH // 2 + 50, SCREEN_HEIGHT // 2 + 100 + exit_btn.height, restart_img, 0.65)
+exit_btn4 = Button(SCREEN_WIDTH // 2 - 135, SCREEN_HEIGHT // 2 + 100 + exit_btn.height, exit_img, 0.65)
 exit_btn_2 = Button(600, 90, exit_img, 0.625)
-
+exit_btn_3 = Button(300, SCREEN_HEIGHT // 2 + 200, exit_img_pixel, 0.65)
 # text_boxes
 login_boxes = []
 login_txt_box = TextBox(100, 260, 300, 50, logFont, border=2)
@@ -655,8 +664,47 @@ password_txt_box = TextBox(100, 320, 300, 50, logFont, border=2)
 login_boxes.append(login_txt_box)
 login_boxes.append(password_txt_box)
 
+def get_instruction():
+    pass
+
+def get_menu_game():
+    draw_menu_game()
+    click_start = start_btn.draw(screen)
+    click_exit = exit_btn.draw(screen)
+    click_instruction = instruction_btn.draw(screen)
+    click_stats = stats_btn.draw(screen)
+    if click_start:
+        return True
+    if click_exit:
+        pygame.quit()
+        sys.exit()
+    if click_stats:
+
+        get_stats()
+    if click_instruction:
+
+        get_instruction()
 
 
+def get_stats():
+    don = False
+    while not don:
+        screen.fill((54, 54, 54))
+        screen.blit(stats_img, (220, 20))
+        click_exit = exit_btn_3.draw(screen)
+        if click_exit:
+            don = True
+        iterator = 0
+        for user in sorted(game_info.stored_users, key=lambda x: x.best_score, reverse=True):
+            stats_usr = logFont.render(user.__str__(), True, (255, 25, 100))
+            screen.blit(stats_usr, (260, 150 + iterator * (stats_img.get_height() * 0.5)))
+            iterator += 1
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        pygame.display.flip()
 
 # list of lists of -1 (empty spaces)
 world_data = []
@@ -749,6 +797,7 @@ while run:
                     if log_vals.check_pass(password):
                         user = game_info.get_user(login)
                         player.set_user(user)
+                        print(user.__str__())
                         logged = True
                         print("Zalogowales sie")
                     else:
@@ -789,16 +838,11 @@ while run:
         new_register = Register(login, password, game_info)
         print("Rejestrujesz się")
         player.set_user(game_info.get_user(login))
+        print(game_info.get_user(login).__str__())
         logged = True
 
     if not start_game and logged:
-        draw_menu_game()
-        click_start = start_btn.draw(screen)
-        click_exit = exit_btn.draw(screen)
-        if click_start:
-            start_game = True
-        if click_exit:
-            run = False
+        start_game = get_menu_game()
 
     if start_game and logged:
         draw_background_update()
@@ -849,11 +893,9 @@ while run:
 
                 player.update_action(0)  # 0: idle
             sc_scroll, level_complete = player.move(move_left, move_right)
-            #bg_scroll -= sc_scroll
-
             if level_complete:
                 lvl += 1
-                #bg_scroll = 0
+
                 world_data = reset_level()
                 if lvl <= MAX_LEVELS:
                     # load in level data and create world
@@ -877,22 +919,9 @@ while run:
                             world_data[x][y] = int(tile)
                 world = Platform()
                 player, health_bar = world.read_data(world_data)
-            elif exit_btn_2.draw(screen):
-                print('klikniety exit')
-                don = False
-                while not don:
-                    print('jestem w pętli exit')
-                    screen.fill((54, 54, 54))
-                    stats = logFont.render(game_info.get_stats(), True, (255, 25, 100))
-                    screen.blit(stats_img, (300, 30))
-                    screen.blit(stats, (30, 100))
-                    pygame.display.flip()
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            don = True
-                            pygame.quit()
-                            sys.exit()
-            print('juz po petli exit')
-
+            elif stats_btn2.draw(screen):
+               get_stats()
+            elif exit_btn4.draw(screen):
+               start_game = False
     pygame.display.update()
 pygame.quit()
